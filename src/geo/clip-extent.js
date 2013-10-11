@@ -48,10 +48,14 @@ function d3_geo_clipExtent(x0, y0, x1, y1) {
         clean = true;
       },
       polygonEnd: function() {
-        d3_geo_clipPolygon(d3.merge(segments), compare, pointInPolygon([x0, y1], polygon), pointInPolygon, interpolate, listener = listener_);
+        d3_geo_clipPolygon(d3.merge(segments), compare, pointInPolygon([x0, y1], polygon), ringInRing, interpolate, listener = listener_);
         segments = polygon = ring = null;
       }
     };
+
+    function ringInRing(a, b) {
+      return pointInPolygon(a[0], [b]);
+    }
 
     function pointInPolygon(p, polygon) {
       var wn = 0, // the winding number counter

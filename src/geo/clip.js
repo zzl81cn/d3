@@ -24,7 +24,7 @@ function d3_geo_clip(pointVisible, clipLine, interpolate, clipStart) {
         clip.lineStart = lineStart;
         clip.lineEnd = lineEnd;
 
-        d3_geo_clipPolygon(d3.merge(segments), d3_geo_clipSort, d3_geo_pointInPolygon(rotatedClipStart, polygon), d3_geo_pointInPolygon, interpolate, listener);
+        d3_geo_clipPolygon(d3.merge(segments), d3_geo_clipSort, d3_geo_pointInPolygon(rotatedClipStart, polygon), d3_geo_clipRingInRing, interpolate, listener);
 
         segments = polygon = null;
       },
@@ -121,4 +121,10 @@ function d3_geo_clipBufferListener() {
 function d3_geo_clipSort(a, b) {
   return ((a = a.x)[0] < 0 ? a[1] - halfπ - ε : halfπ - a[1])
        - ((b = b.x)[0] < 0 ? b[1] - halfπ - ε : halfπ - b[1]);
+}
+
+function d3_geo_clipRingInRing(a, b) {
+  return a.length < b.length
+      ? d3_geo_pointInPolygon(b[0], [a])
+      : d3_geo_pointInPolygon(a[0], [b]);
 }

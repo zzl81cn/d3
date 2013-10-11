@@ -2616,7 +2616,7 @@ d3 = function() {
   function d3_true() {
     return true;
   }
-  function d3_geo_clipPolygon(segments, compare, clipStartInside, pointInPolygon, interpolate, listener) {
+  function d3_geo_clipPolygon(segments, compare, clipStartInside, ringInRing, interpolate, listener) {
     var subject = [], clip = [], rings = [], n = segments.length;
     for (var i = 0; i < n; ++i) {
       var segment = segments[i];
@@ -2679,15 +2679,15 @@ d3 = function() {
         listener.polygonEnd();
       }
       if (n = rings.length) {
-        var exteriors = listener.buffer(), exteriorPolygon = [ null ];
+        var exteriors = listener.buffer();
         listener = listener_;
         for (var j = 0, m = exteriors.length; j < m; ++j) {
-          var exterior = exteriorPolygon[0] = exteriors[j];
+          var exterior = exteriors[j];
           listener.polygonStart();
           d3_geo_clipPolygonStreamRing(exterior, listener);
           for (var i = 0; i < n; ++i) {
             var ring = rings[i];
-            if (ring && pointInPolygon(ring[0], exteriorPolygon)) {
+            if (ring && ringInRing(ring, exterior)) {
               d3_geo_clipPolygonStreamRing(ring, listener);
               rings[i] = null;
             }
@@ -2752,7 +2752,7 @@ d3 = function() {
           clip.point = point;
           clip.lineStart = lineStart;
           clip.lineEnd = lineEnd;
-          d3_geo_clipPolygon(d3.merge(segments), d3_geo_clipSort, d3_geo_pointInPolygon(rotatedClipStart, polygon), d3_geo_pointInPolygon, interpolate, listener);
+          d3_geo_clipPolygon(d3.merge(segments), d3_geo_clipSort, d3_geo_pointInPolygon(rotatedClipStart, polygon), d3_geo_clipRingInRing, interpolate, listener);
           segments = polygon = null;
         },
         sphere: function() {
@@ -2832,6 +2832,9 @@ d3 = function() {
   }
   function d3_geo_clipSort(a, b) {
     return ((a = a.x)[0] < 0 ? a[1] - halfπ - ε : halfπ - a[1]) - ((b = b.x)[0] < 0 ? b[1] - halfπ - ε : halfπ - b[1]);
+  }
+  function d3_geo_clipRingInRing(a, b) {
+    return a.length < b.length ? d3_geo_pointInPolygon(b[0], [ a ]) : d3_geo_pointInPolygon(a[0], [ b ]);
   }
   function d3_geo_pointInPolygon(point, polygon) {
     var meridian = point[0], parallel = point[1], meridianNormal = [ Math.sin(meridian), -Math.cos(meridian), 0 ], polarAngle = 0, winding = 0;
@@ -3111,10 +3114,13 @@ d3 = function() {
           clean = true;
         },
         polygonEnd: function() {
-          d3_geo_clipPolygon(d3.merge(segments), compare, pointInPolygon([ x0, y1 ], polygon), pointInPolygon, interpolate, listener = listener_);
+          d3_geo_clipPolygon(d3.merge(segments), compare, pointInPolygon([ x0, y1 ], polygon), ringInRing, interpolate, listener = listener_);
           segments = polygon = ring = null;
         }
       };
+      function ringInRing(a, b) {
+        return pointInPolygon(a[0], [ b ]);
+      }
       function pointInPolygon(p, polygon) {
         var wn = 0, n = polygon.length, y = p[1];
         for (var i = 0; i < n; ++i) {

@@ -4,7 +4,7 @@ import "spherical";
 // General spherical polygon clipping algorithm.
 // Given a polygon that has been cut into visible line segments, rejoins the
 // segments by interpolating along the clip edge where necessary.
-function d3_geo_clipPolygon(segments, compare, clipStartInside, pointInPolygon, interpolate, listener) {
+function d3_geo_clipPolygon(segments, compare, clipStartInside, ringInRing, interpolate, listener) {
   var subject = [],
       clip = [],
       rings = [],
@@ -93,16 +93,15 @@ function d3_geo_clipPolygon(segments, compare, clipStartInside, pointInPolygon, 
     }
 
     if (n = rings.length) {
-      var exteriors = listener.buffer(),
-          exteriorPolygon = [null];
+      var exteriors = listener.buffer();
       listener = listener_;
       for (var j = 0, m = exteriors.length; j < m; ++j) {
-        var exterior = exteriorPolygon[0] = exteriors[j];
+        var exterior = exteriors[j];
         listener.polygonStart();
         d3_geo_clipPolygonStreamRing(exterior, listener);
         for (var i = 0; i < n; ++i) {
           var ring = rings[i];
-          if (ring && pointInPolygon(ring[0], exteriorPolygon)) {
+          if (ring && ringInRing(ring, exterior)) {
             d3_geo_clipPolygonStreamRing(ring, listener);
             rings[i] = null;
           }
